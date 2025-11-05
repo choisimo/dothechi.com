@@ -14,10 +14,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -72,6 +72,74 @@ public class UserController {
     @PutMapping("/auth/logout")
     public ResponseEntity<?> logoutUser(HttpServletRequest request, HttpServletResponse response) {
         return this.userService.logoutUser(request, response);
+    }
+
+    @Operation(summary = "토큰 검증", description = "JWT 토큰의 유효성을 검증합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "토큰 유효"),
+            @ApiResponse(responseCode = "401", description = "토큰 무효"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    @GetMapping("/auth/verify")
+    public ResponseEntity<?> verifyToken(@AuthenticationPrincipal PrincipalDetails principalDetails) {
+        if (principalDetails != null && principalDetails.getUser() != null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("valid", true);
+            response.put("user", Map.of(
+                    "id", principalDetails.getUser().getId(),
+                    "userId", principalDetails.getUser().getUserId(),
+                    "email", principalDetails.getUser().getEmail(),
+                    "username", principalDetails.getUser().getUsername(),
+                    "userNick", principalDetails.getUser().getUserNick(),
+                    "userRole", principalDetails.getUser().getUserRole().toString(),
+                    "isActive", principalDetails.getUser().isActive()
+            ));
+            return ResponseEntity.ok(ApiResponseDto.builder()
+                    .status("success")
+                    .message("토큰이 유효합니다.")
+                    .code("TOKEN_VALID")
+                    .data(response)
+                    .build());
+        }
+        return ResponseEntity.status(401).body(ApiResponseDto.builder()
+                .status("error")
+                .message("토큰이 유효하지 않습니다.")
+                .code("TOKEN_INVALID")
+                .build());
+    }
+
+    @Operation(summary = "프로필 조회", description = "현재 로그인한 사용자의 프로필을 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "프로필 조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    @GetMapping("/user/profile")
+    public ResponseEntity<?> getUserProfile(@AuthenticationPrincipal PrincipalDetails principalDetails) {
+        if (principalDetails != null && principalDetails.getUser() != null) {
+            Map<String, Object> userProfile = new HashMap<>();
+            userProfile.put("id", principalDetails.getUser().getId());
+            userProfile.put("userId", principalDetails.getUser().getUserId());
+            userProfile.put("email", principalDetails.getUser().getEmail());
+            userProfile.put("username", principalDetails.getUser().getUsername());
+            userProfile.put("userNick", principalDetails.getUser().getUserNick());
+            userProfile.put("userRole", principalDetails.getUser().getUserRole().toString());
+            userProfile.put("isActive", principalDetails.getUser().isActive());
+            userProfile.put("createdAt", principalDetails.getUser().getCreatedAt());
+            userProfile.put("updatedAt", principalDetails.getUser().getUpdatedAt());
+
+            return ResponseEntity.ok(ApiResponseDto.builder()
+                    .status("success")
+                    .message("프로필 조회 성공")
+                    .code("PROFILE_GET_SUCCESS")
+                    .data(userProfile)
+                    .build());
+        }
+        return ResponseEntity.status(401).body(ApiResponseDto.builder()
+                .status("error")
+                .message("인증되지 않은 사용자입니다.")
+                .code("UNAUTHORIZED")
+                .build());
     }
 
 }
