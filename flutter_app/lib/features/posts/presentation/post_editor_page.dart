@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_chat_client/core/ai/ai_providers.dart';
 import 'package:go_router/go_router.dart';
+import '../data/providers/posts_providers.dart';
+import '../../auth/data/providers/auth_providers.dart';
+import '../../auth/domain/dto/auth_status.dart';
 
 class PostEditorPage extends ConsumerStatefulWidget {
   final int? postId; // 수정 시 사용
-  
+
   const PostEditorPage({super.key, this.postId});
 
   @override
@@ -16,10 +19,11 @@ class _PostEditorPageState extends ConsumerState<PostEditorPage> {
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  
+
   String? _selectedCategory;
   List<String> _selectedTags = [];
-  
+  bool _isSaving = false;
+
   @override
   void initState() {
     super.initState();
@@ -38,10 +42,9 @@ class _PostEditorPageState extends ConsumerState<PostEditorPage> {
     if (content.length > 50) {
       // 50자 이상일 때 AI 분석 시작
       ref.read(aiWritingAssistantProvider.notifier).generateTags(content);
-      ref.read(aiWritingAssistantProvider.notifier).classifyCategory(
-        _titleController.text, 
-        content
-      );
+      ref
+          .read(aiWritingAssistantProvider.notifier)
+          .classifyCategory(_titleController.text, content);
     }
   }
 
@@ -62,10 +65,19 @@ class _PostEditorPageState extends ConsumerState<PostEditorPage> {
             tooltip: 'AI 도우미',
           ),
           // 저장 버튼
-          TextButton(
-            onPressed: _savePost,
-            child: const Text('저장'),
-          ),
+          _isSaving
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              : TextButton(
+                  onPressed: _savePost,
+                  child: const Text('저장'),
+                ),
         ],
       ),
       body: Form(
@@ -76,7 +88,8 @@ class _PostEditorPageState extends ConsumerState<PostEditorPage> {
             if (aiUsageState.dailyRequests > 0)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 color: Colors.blue.shade50,
                 child: Text(
                   'AI 기능 사용: ${aiUsageState.dailyRequests}/10 (무료)',
@@ -86,7 +99,7 @@ class _PostEditorPageState extends ConsumerState<PostEditorPage> {
                   ),
                 ),
               ),
-            
+
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
@@ -96,26 +109,25 @@ class _PostEditorPageState extends ConsumerState<PostEditorPage> {
                     // 제목 입력 필드
                     _buildTitleField(aiWritingState),
                     const SizedBox(height: 16),
-                    
+
                     // AI 제안 제목들
                     if (aiWritingState.suggestedTitles.isNotEmpty)
                       _buildSuggestedTitles(aiWritingState.suggestedTitles),
-                    
+
                     // 카테고리 선택
                     _buildCategorySelector(aiWritingState),
                     const SizedBox(height: 16),
-                    
+
                     // 내용 입력 필드
                     _buildContentField(),
                     const SizedBox(height: 16),
-                    
+
                     // AI 제안 태그들
                     if (aiWritingState.suggestedTags.isNotEmpty)
                       _buildSuggestedTags(aiWritingState.suggestedTags),
-                    
+
                     // 선택된 태그들
-                    if (_selectedTags.isNotEmpty)
-                      _buildSelectedTags(),
+                    if (_selectedTags.isNotEmpty) _buildSelectedTags(),
                   ],
                 ),
               ),
@@ -239,7 +251,8 @@ class _PostEditorPageState extends ConsumerState<PostEditorPage> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.auto_awesome, size: 12, color: Colors.green.shade700),
+                    Icon(Icons.auto_awesome,
+                        size: 12, color: Colors.green.shade700),
                     const SizedBox(width: 4),
                     Text(
                       'AI 추천: ${_getCategoryName(aiState.detectedCategory!)}',
@@ -260,7 +273,8 @@ class _PostEditorPageState extends ConsumerState<PostEditorPage> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
           hint: const Text('카테고리를 선택하세요'),
           items: categories.map((category) {
@@ -344,7 +358,9 @@ class _PostEditorPageState extends ConsumerState<PostEditorPage> {
                   }
                 });
               },
-              avatar: isSelected ? const Icon(Icons.check, size: 16) : const Icon(Icons.add, size: 16),
+              avatar: isSelected
+                  ? const Icon(Icons.check, size: 16)
+                  : const Icon(Icons.add, size: 16),
             );
           }).toList(),
         ),
@@ -419,9 +435,12 @@ class _PostEditorPageState extends ConsumerState<PostEditorPage> {
   void _improveContent() async {
     final content = _contentController.text;
     if (content.trim().isNotEmpty) {
-      await ref.read(aiWritingAssistantProvider.notifier).improveContent(content);
-      final improvedContent = ref.read(aiWritingAssistantProvider).improvedContent;
-      
+      await ref
+          .read(aiWritingAssistantProvider.notifier)
+          .improveContent(content);
+      final improvedContent =
+          ref.read(aiWritingAssistantProvider).improvedContent;
+
       if (improvedContent != null) {
         showDialog(
           context: context,
@@ -432,7 +451,8 @@ class _PostEditorPageState extends ConsumerState<PostEditorPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('개선된 내용:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('개선된 내용:',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -506,8 +526,9 @@ class _PostEditorPageState extends ConsumerState<PostEditorPage> {
               subtitle: const Text('적절한 태그를 자동 생성합니다'),
               onTap: () {
                 Navigator.pop(context);
-                ref.read(aiWritingAssistantProvider.notifier)
-                   .generateTags(_contentController.text);
+                ref
+                    .read(aiWritingAssistantProvider.notifier)
+                    .generateTags(_contentController.text);
               },
             ),
             ListTile(
@@ -551,13 +572,88 @@ class _PostEditorPageState extends ConsumerState<PostEditorPage> {
     );
   }
 
-  void _savePost() {
+  Future<void> _savePost() async {
     if (_formKey.currentState!.validate()) {
-      // TODO: 실제 게시물 저장 로직 구현
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('게시물이 저장되었습니다')),
-      );
-      context.pop();
+      // Check authentication
+      final authState = ref.read(authNotifierProvider);
+      if (authState is! AuthAuthenticated) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('로그인이 필요합니다')),
+        );
+        context.push('/user/login');
+        return;
+      }
+
+      // Validate category
+      if (_selectedCategory == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('카테고리를 선택해주세요')),
+        );
+        return;
+      }
+
+      setState(() => _isSaving = true);
+
+      try {
+        final repository = ref.read(postsRepositoryProvider);
+
+        if (widget.postId == null) {
+          // Create new post
+          await repository.createPost(
+            title: _titleController.text.trim(),
+            content: _contentController.text.trim(),
+            category: _selectedCategory!,
+            tags: _selectedTags,
+          );
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('게시물이 작성되었습니다'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            // Invalidate posts cache to refresh list
+            ref.invalidate(latestPostsProvider);
+            context.pop(true); // Return true to indicate success
+          }
+        } else {
+          // Update existing post
+          await repository.updatePost(
+            id: widget.postId!,
+            title: _titleController.text.trim(),
+            content: _contentController.text.trim(),
+            category: _selectedCategory!,
+            tags: _selectedTags,
+          );
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('게시물이 수정되었습니다'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            // Invalidate specific post cache
+            ref.invalidate(postProvider(widget.postId!));
+            ref.invalidate(latestPostsProvider);
+            context.pop(true);
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('저장 실패: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isSaving = false);
+        }
+      }
     }
   }
 
@@ -585,7 +681,8 @@ class AIChatBotBottomSheet extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<AIChatBotBottomSheet> createState() => _AIChatBotBottomSheetState();
+  ConsumerState<AIChatBotBottomSheet> createState() =>
+      _AIChatBotBottomSheetState();
 }
 
 class _AIChatBotBottomSheetState extends ConsumerState<AIChatBotBottomSheet> {
@@ -633,7 +730,7 @@ class _AIChatBotBottomSheetState extends ConsumerState<AIChatBotBottomSheet> {
             ],
           ),
         ),
-        
+
         // 메시지 목록
         Expanded(
           child: chatState.messages.isEmpty
@@ -672,7 +769,7 @@ class _AIChatBotBottomSheetState extends ConsumerState<AIChatBotBottomSheet> {
                   },
                 ),
         ),
-        
+
         // 로딩 인디케이터
         if (chatState.isLoading)
           Container(
@@ -689,7 +786,7 @@ class _AIChatBotBottomSheetState extends ConsumerState<AIChatBotBottomSheet> {
               ],
             ),
           ),
-        
+
         // 메시지 입력
         Container(
           padding: const EdgeInsets.all(16),
@@ -734,7 +831,7 @@ class _AIChatBotBottomSheetState extends ConsumerState<AIChatBotBottomSheet> {
     if (message.trim().isNotEmpty) {
       ref.read(aiChatBotProvider.notifier).sendMessage(message);
       _messageController.clear();
-      
+
       // 메시지 전송 후 스크롤을 맨 아래로
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_messagesScrollController.hasClients) {
@@ -781,8 +878,12 @@ class ChatBubble extends StatelessWidget {
               decoration: BoxDecoration(
                 color: message.isUser ? Colors.blue : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(16).copyWith(
-                  bottomLeft: message.isUser ? const Radius.circular(16) : const Radius.circular(4),
-                  bottomRight: message.isUser ? const Radius.circular(4) : const Radius.circular(16),
+                  bottomLeft: message.isUser
+                      ? const Radius.circular(16)
+                      : const Radius.circular(4),
+                  bottomRight: message.isUser
+                      ? const Radius.circular(4)
+                      : const Radius.circular(16),
                 ),
               ),
               child: Text(

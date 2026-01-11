@@ -1,175 +1,202 @@
+import 'dart:developer' as developer;
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_chat_client/core/ai/ai_service_interface.dart';
 import 'package:flutter_chat_client/core/ai/ai_providers.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_chat_client/core/network/api_client.dart';
+import 'package:flutter_chat_client/features/auth/data/providers/auth_providers.dart';
+import 'package:flutter_chat_client/features/auth/domain/dto/auth_status.dart';
+
+import 'api/ai_api.dart';
+import '../domain/models/ai_models.dart';
+
+part 'ai_recommendation_service.g.dart';
+
+// ============================================================================
+// AI API Provider
+// ============================================================================
+
+@riverpod
+AIApi aiApi(AiApiRef ref) {
+  final dio = ref.watch(communityDioProvider);
+  return AIApi(dio);
+}
+
+// ============================================================================
+// AI Recommendation Service
+// ============================================================================
 
 class AIRecommendationService {
+  final AIApi aiApi;
   final AIServiceInterface aiService;
 
-  AIRecommendationService(this.aiService);
+  AIRecommendationService({
+    required this.aiApi,
+    required this.aiService,
+  });
 
   /// 사용자 관심사 기반 게시물 추천
-  Future<List<Map<String, dynamic>>> getPersonalizedPosts(
-    String userId, {
+  Future<List<RecommendedPost>> getPersonalizedPosts(
+    int userId, {
     List<String>? preferredCategories,
     List<String>? preferredTags,
+    int limit = 10,
   }) async {
-    // TODO: 실제 사용자 행동 데이터 기반 추천 구현
-    // 현재는 Mock 데이터 반환
-    await Future.delayed(const Duration(seconds: 1));
-
-    return [
-      {
-        'id': 201,
-        'title': 'Flutter 성능 최적화 실전 가이드',
-        'content': 'Flutter 앱의 성능을 극대화하는 실전 기법들을 상세히 다룹니다. 위젯 최적화부터 메모리 관리까지.',
-        'excerpt': 'Flutter 앱의 성능을 극대화하는 실전 기법들을 상세히 다룹니다.',
-        'author': {'userNick': '성능마스터'},
-        'category': 'tech',
-        'tags': ['flutter', '성능', '최적화'],
-        'likeCount': 45,
-        'viewCount': 320,
-        'createdAt': DateTime.now().subtract(const Duration(hours: 3)),
-        'isRecommended': true,
-        'recommendationScore': 0.92,
-        'recommendationReason': '최근 Flutter 성능 관련 글을 자주 읽으셨네요',
-      },
-      {
-        'id': 202,
-        'title': 'AI 챗봇 구현하기: 처음부터 끝까지',
-        'content':
-            'Flutter 앱에 AI 챗봇을 통합하는 완벽한 가이드입니다. OpenAI API 연동부터 UI 구성까지.',
-        'excerpt': 'Flutter 앱에 AI 챗봇을 통합하는 완벽한 가이드입니다.',
-        'author': {'userNick': 'AI개발자'},
-        'category': 'tech',
-        'tags': ['ai', 'chatbot', 'openai'],
-        'likeCount': 67,
-        'viewCount': 480,
-        'createdAt': DateTime.now().subtract(const Duration(hours: 5)),
-        'isRecommended': true,
-        'recommendationScore': 0.89,
-        'recommendationReason': 'AI 관련 콘텐츠에 관심이 많으시네요',
-      },
-    ];
+    try {
+      return await aiApi.getPersonalizedRecommendations(
+        userId: userId,
+        preferredCategories: preferredCategories,
+        preferredTags: preferredTags,
+        limit: limit,
+      );
+    } catch (e) {
+      developer.log('Error fetching personalized posts: $e',
+          name: 'AIRecommendationService');
+      // Fallback to empty list on error
+      return [];
+    }
   }
 
   /// 유사 게시물 추천
-  Future<List<Map<String, dynamic>>> getSimilarPosts(int postId) async {
-    // TODO: 게시물 내용 유사도 기반 추천 구현
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    return [
-      {
-        'id': 301,
-        'title': '관련 글: Dart 언어 심화 학습',
-        'excerpt': 'Dart 언어의 고급 기능들을 활용한 효율적인 코딩 방법을 소개합니다.',
-        'similarity': 0.85,
-      },
-      {
-        'id': 302,
-        'title': '관련 글: 모바일 앱 아키텍처 패턴',
-        'excerpt': 'Clean Architecture와 MVVM 패턴을 Flutter에 적용하는 방법을 다룹니다.',
-        'similarity': 0.78,
-      },
-    ];
+  Future<List<SimilarPost>> getSimilarPosts(int postId, {int limit = 5}) async {
+    try {
+      return await aiApi.getSimilarPosts(postId, limit: limit);
+    } catch (e) {
+      developer.log('Error fetching similar posts: $e',
+          name: 'AIRecommendationService');
+      return [];
+    }
   }
 
   /// 트렌딩 토픽 분석
-  Future<List<Map<String, dynamic>>> getTrendingTopics() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    return [
-      {
-        'topic': 'Flutter 3.16',
-        'count': 25,
-        'growth': 0.35,
-        'description': 'Flutter 최신 버전 업데이트',
-      },
-      {
-        'topic': 'AI 통합',
-        'count': 18,
-        'growth': 0.42,
-        'description': '모바일 앱에 AI 기능 추가',
-      },
-      {
-        'topic': '상태 관리',
-        'count': 15,
-        'growth': 0.12,
-        'description': 'Riverpod, Bloc 등 상태 관리 라이브러리',
-      },
-    ];
+  Future<List<TrendingTopic>> getTrendingTopics() async {
+    try {
+      return await aiApi.getTrendingTopics();
+    } catch (e) {
+      developer.log('Error fetching trending topics: $e',
+          name: 'AIRecommendationService');
+      return [];
+    }
   }
 
   /// 사용자 행동 기록
   Future<void> recordUserInteraction({
-    required String userId,
+    required int userId,
     required String action, // 'view', 'like', 'comment', 'share'
     required int postId,
     String? category,
     List<String>? tags,
   }) async {
-    // TODO: 사용자 행동 데이터 저장
-    // 실제 구현에서는 이 데이터를 기반으로 추천 모델 학습
+    try {
+      final interaction = UserInteraction(
+        userId: userId,
+        postId: postId,
+        action: action,
+        category: category,
+        tags: tags,
+        timestamp: DateTime.now(),
+      );
+      await aiApi.recordInteraction(interaction);
+    } catch (e) {
+      developer.log('Error recording interaction: $e',
+          name: 'AIRecommendationService');
+      // Non-critical, don't throw
+    }
   }
 
-  /// 개인화 추천 모델 업데이트
-  Future<void> updatePersonalizationModel(String userId) async {
-    // TODO: 사용자별 추천 모델 재학습
+  /// AI 스마트 검색
+  Future<AISearchResponse> smartSearch(
+    String query, {
+    int page = 1,
+    int limit = 10,
+  }) async {
+    try {
+      return await aiApi.smartSearch(query: query, page: page, limit: limit);
+    } catch (e) {
+      developer.log('Error performing smart search: $e',
+          name: 'AIRecommendationService');
+      return AISearchResponse(
+        posts: [],
+        relatedTopics: [],
+        suggestedQueries: [],
+        totalCount: 0,
+      );
+    }
   }
 }
 
-// 추천 시스템 프로바이더들
-final aiRecommendationServiceProvider =
-    Provider<AIRecommendationService>((ref) {
-  final aiService = ref.read(aiServiceProvider);
-  return AIRecommendationService(aiService);
-});
+// ============================================================================
+// Riverpod Providers
+// ============================================================================
 
-final personalizedPostsProvider =
-    FutureProvider.family<List<Map<String, dynamic>>, String>(
-        (ref, userId) async {
+@riverpod
+AIRecommendationService aiRecommendationService(
+    AiRecommendationServiceRef ref) {
+  final aiApi = ref.watch(aiApiProvider);
+  final aiService = ref.watch(aiServiceProvider);
+  return AIRecommendationService(aiApi: aiApi, aiService: aiService);
+}
+
+/// 현재 로그인한 사용자 ID 가져오기
+@riverpod
+int? currentUserId(CurrentUserIdRef ref) {
+  final authState = ref.watch(authNotifierProvider);
+  return switch (authState) {
+    AuthAuthenticated(:final user) => int.tryParse(user.id),
+    _ => null,
+  };
+}
+
+/// 개인화 추천 게시물 프로바이더
+@riverpod
+Future<List<RecommendedPost>> personalizedPosts(
+    PersonalizedPostsRef ref) async {
+  final userId = ref.watch(currentUserIdProvider);
+  if (userId == null) return [];
+
   final service = ref.read(aiRecommendationServiceProvider);
   return await service.getPersonalizedPosts(userId);
-});
+}
 
-final similarPostsProvider =
-    FutureProvider.family<List<Map<String, dynamic>>, int>((ref, postId) async {
+/// 유사 게시물 프로바이더
+@riverpod
+Future<List<SimilarPost>> similarPosts(SimilarPostsRef ref, int postId) async {
   final service = ref.read(aiRecommendationServiceProvider);
   return await service.getSimilarPosts(postId);
-});
+}
 
-final trendingTopicsProvider =
-    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+/// 트렌딩 토픽 프로바이더
+@riverpod
+Future<List<TrendingTopic>> trendingTopics(TrendingTopicsRef ref) async {
   final service = ref.read(aiRecommendationServiceProvider);
   return await service.getTrendingTopics();
-});
+}
 
-// 사용자 상호작용 기록 프로바이더
-final userInteractionNotifierProvider =
-    StateNotifierProvider<UserInteractionNotifier, UserInteractionState>((ref) {
-  final service = ref.read(aiRecommendationServiceProvider);
-  return UserInteractionNotifier(service);
-});
+// ============================================================================
+// User Interaction State Management
+// ============================================================================
 
-class UserInteractionState {
+class UserInteractionLocalState {
   final Map<int, DateTime> viewedPosts;
   final Set<int> likedPosts;
   final Map<String, int> categoryInteractions;
   final Map<String, int> tagInteractions;
 
-  UserInteractionState({
+  UserInteractionLocalState({
     this.viewedPosts = const {},
     this.likedPosts = const {},
     this.categoryInteractions = const {},
     this.tagInteractions = const {},
   });
 
-  UserInteractionState copyWith({
+  UserInteractionLocalState copyWith({
     Map<int, DateTime>? viewedPosts,
     Set<int>? likedPosts,
     Map<String, int>? categoryInteractions,
     Map<String, int>? tagInteractions,
   }) {
-    return UserInteractionState(
+    return UserInteractionLocalState(
       viewedPosts: viewedPosts ?? this.viewedPosts,
       likedPosts: likedPosts ?? this.likedPosts,
       categoryInteractions: categoryInteractions ?? this.categoryInteractions,
@@ -178,14 +205,21 @@ class UserInteractionState {
   }
 }
 
-class UserInteractionNotifier extends StateNotifier<UserInteractionState> {
-  final AIRecommendationService _service;
+@riverpod
+class UserInteractionNotifier extends _$UserInteractionNotifier {
+  @override
+  UserInteractionLocalState build() {
+    return UserInteractionLocalState();
+  }
 
-  UserInteractionNotifier(this._service) : super(UserInteractionState());
+  AIRecommendationService get _service =>
+      ref.read(aiRecommendationServiceProvider);
+
+  int? get _userId => ref.read(currentUserIdProvider);
 
   Future<void> recordPostView(int postId,
       {String? category, List<String>? tags}) async {
-    // 상태 업데이트
+    // Update local state
     final newViewedPosts = Map<int, DateTime>.from(state.viewedPosts);
     newViewedPosts[postId] = DateTime.now();
 
@@ -209,14 +243,17 @@ class UserInteractionNotifier extends StateNotifier<UserInteractionState> {
       tagInteractions: newTagInteractions,
     );
 
-    // 서버에 기록
-    await _service.recordUserInteraction(
-      userId: 'current_user', // TODO: 실제 사용자 ID 사용
-      action: 'view',
-      postId: postId,
-      category: category,
-      tags: tags,
-    );
+    // Send to server
+    final userId = _userId;
+    if (userId != null) {
+      await _service.recordUserInteraction(
+        userId: userId,
+        action: 'view',
+        postId: postId,
+        category: category,
+        tags: tags,
+      );
+    }
   }
 
   Future<void> recordPostLike(int postId,
@@ -244,13 +281,45 @@ class UserInteractionNotifier extends StateNotifier<UserInteractionState> {
       tagInteractions: newTagInteractions,
     );
 
-    await _service.recordUserInteraction(
-      userId: 'current_user',
-      action: 'like',
-      postId: postId,
-      category: category,
-      tags: tags,
-    );
+    // Send to server
+    final userId = _userId;
+    if (userId != null) {
+      await _service.recordUserInteraction(
+        userId: userId,
+        action: 'like',
+        postId: postId,
+        category: category,
+        tags: tags,
+      );
+    }
+  }
+
+  Future<void> recordPostComment(int postId,
+      {String? category, List<String>? tags}) async {
+    final userId = _userId;
+    if (userId != null) {
+      await _service.recordUserInteraction(
+        userId: userId,
+        action: 'comment',
+        postId: postId,
+        category: category,
+        tags: tags,
+      );
+    }
+  }
+
+  Future<void> recordPostShare(int postId,
+      {String? category, List<String>? tags}) async {
+    final userId = _userId;
+    if (userId != null) {
+      await _service.recordUserInteraction(
+        userId: userId,
+        action: 'share',
+        postId: postId,
+        category: category,
+        tags: tags,
+      );
+    }
   }
 
   List<String> getTopInteractedCategories({int limit = 5}) {
@@ -266,52 +335,41 @@ class UserInteractionNotifier extends StateNotifier<UserInteractionState> {
   }
 }
 
-// 스마트 피드 프로바이더 - 사용자 관심사 기반으로 피드 구성
-final smartFeedProvider =
-    FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  final userInteractionNotifier =
+// ============================================================================
+// Smart Feed Provider
+// ============================================================================
+
+@riverpod
+Future<List<RecommendedPost>> smartFeed(SmartFeedRef ref) async {
+  final userId = ref.watch(currentUserIdProvider);
+  if (userId == null) return [];
+
+  final interactionNotifier =
       ref.read(userInteractionNotifierProvider.notifier);
-  final recommendationService = ref.read(aiRecommendationServiceProvider);
+  final service = ref.read(aiRecommendationServiceProvider);
 
-  // 사용자 관심 카테고리와 태그 기반으로 맞춤형 피드 생성
-  final topCategories = userInteractionNotifier.getTopInteractedCategories();
-  final topTags = userInteractionNotifier.getTopInteractedTags();
+  // Get user's preferred categories and tags from local interaction history
+  final topCategories = interactionNotifier.getTopInteractedCategories();
+  final topTags = interactionNotifier.getTopInteractedTags();
 
-  // AI 추천 게시물 가져오기 (사용자 관심사 반영)
-  final personalizedPosts = await recommendationService.getPersonalizedPosts(
-    'current_user',
-    preferredCategories: topCategories,
-    preferredTags: topTags,
+  // Fetch personalized posts with user preferences
+  return await service.getPersonalizedPosts(
+    userId,
+    preferredCategories: topCategories.isNotEmpty ? topCategories : null,
+    preferredTags: topTags.isNotEmpty ? topTags : null,
   );
+}
 
-  // 트렌딩 토픽도 포함
-  final trendingTopics = await recommendationService.getTrendingTopics();
+// ============================================================================
+// AI Content Analysis Provider (using local AI service)
+// ============================================================================
 
-  // 피드 구성 (추천 게시물 + 트렌딩 기반 게시물)
-  final feed = <Map<String, dynamic>>[];
-  feed.addAll(personalizedPosts);
-
-  // 트렌딩 토픽 기반 추가 게시물 (Mock)
-  for (final topic in trendingTopics.take(2)) {
-    feed.add({
-      'id': 400 + feed.length,
-      'title': '🔥 ${topic['topic']}: 지금 가장 핫한 주제',
-      'content': '${topic['description']} - 커뮤니티에서 가장 많이 이야기되고 있는 주제입니다.',
-      'excerpt': topic['description'],
-      'isTrending': true,
-      'trendingScore': topic['growth'],
-    });
-  }
-
-  return feed;
-});
-
-// AI 콘텐츠 분석 프로바이더
-final contentAnalysisProvider =
-    FutureProvider.family<Map<String, dynamic>, String>((ref, content) async {
+@riverpod
+Future<Map<String, dynamic>> contentAnalysis(
+    ContentAnalysisRef ref, String content) async {
   final aiService = ref.read(aiServiceProvider);
 
-  // 동시에 여러 AI 분석 수행
+  // Perform multiple AI analyses concurrently
   final results = await Future.wait([
     aiService.generateTags(content),
     aiService.classifyCategory('', content),
@@ -326,4 +384,38 @@ final contentAnalysisProvider =
     'isSpam': results[3] as bool,
     'analyzedAt': DateTime.now(),
   };
-});
+}
+
+// ============================================================================
+// AI Search Provider
+// ============================================================================
+
+@riverpod
+class AISearchNotifier extends _$AISearchNotifier {
+  @override
+  AsyncValue<AISearchResponse?> build() {
+    return const AsyncValue.data(null);
+  }
+
+  Future<void> search(String query, {int page = 1, int limit = 10}) async {
+    if (query.trim().isEmpty) {
+      state = const AsyncValue.data(null);
+      return;
+    }
+
+    state = const AsyncValue.loading();
+
+    try {
+      final service = ref.read(aiRecommendationServiceProvider);
+      final response =
+          await service.smartSearch(query, page: page, limit: limit);
+      state = AsyncValue.data(response);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  void clearSearch() {
+    state = const AsyncValue.data(null);
+  }
+}

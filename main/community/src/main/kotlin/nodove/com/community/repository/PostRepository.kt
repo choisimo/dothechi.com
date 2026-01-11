@@ -12,6 +12,8 @@ import org.springframework.stereotype.Repository
 interface PostRepository : JpaRepository<Post, Long> {
 
     fun findByCategory(category: String, pageable: Pageable): Page<Post>
+    
+    fun findByCategoryIn(categories: List<String>, pageable: Pageable): Page<Post>
 
     @Query("SELECT p FROM Post p ORDER BY p.viewCount DESC, p.likeCount DESC")
     fun findRecommended(pageable: Pageable): List<Post>

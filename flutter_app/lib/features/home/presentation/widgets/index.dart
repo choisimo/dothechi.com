@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../posts/data/providers/posts_providers.dart';
 import '../../../auth/data/providers/auth_providers.dart';
 import '../../../auth/domain/dto/auth_status.dart';
+import '../../../ai/presentation/ai_widgets.dart';
 import 'section_title.dart';
 import 'horizontal_category_list.dart';
 import 'horizontal_post_list.dart';
@@ -124,27 +125,18 @@ class IndexPage extends ConsumerWidget {
             children: [
               const SizedBox(height: 16),
 
-              // 검색창
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: '검색어를 입력하세요...',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                  ),
-                  onSubmitted: (query) {
-                    if (query.isNotEmpty) {
-                      context
-                          .push('/search?query=${Uri.encodeComponent(query)}');
-                    }
-                  },
-                ),
-              ),
+              // AI 스마트 검색
+              const SmartSearchWidget(),
+              const SizedBox(height: 8),
+
+              // AI 맞춤 추천 섹션 (로그인한 사용자만)
+              if (authState is AuthAuthenticated) ...[
+                const AIRecommendationSection(),
+                const SizedBox(height: 24),
+              ],
+
+              // 트렌딩 토픽 섹션
+              const TrendingTopicsSection(),
               const SizedBox(height: 24),
 
               // 추천 게시물 섹션

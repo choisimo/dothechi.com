@@ -47,6 +47,7 @@ class SecurityConfig {
                     // Public endpoints
                     .requestMatchers("/api/posts/**").permitAll()
                     .requestMatchers("/api/categories/**").permitAll()
+                    .requestMatchers("/api/ai/**").permitAll()
                     .requestMatchers("/actuator/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                     // All other requests need authentication

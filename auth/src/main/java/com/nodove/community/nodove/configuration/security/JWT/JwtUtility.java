@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -44,11 +45,23 @@ public class JwtUtility implements JwtUtilityManager {
     private final UserBlockServiceManager userBlockService;
     private final UserRepository userRepository;
     private final ResponseStatusManager responseStatusManager;
+    private final Environment environment;
+    
+    @Value("${cookie.domain:}")
+    private String cookieDomain;
+    
+    @Value("${cookie.secure:true}")
+    private boolean cookieSecure;
 
 
     public JwtUtility(
             @Value("${jwt.secret-key.access}") String accessKey,
-            @Value("${jwt.secret-key.refresh}") String refreshKey, RedisServiceManager redisService, UserBlockServiceManager userBlockService, UserRepository userRepository, ResponseStatusManager responseStatusManager
+            @Value("${jwt.secret-key.refresh}") String refreshKey, 
+            RedisServiceManager redisService, 
+            UserBlockServiceManager userBlockService, 
+            UserRepository userRepository, 
+            ResponseStatusManager responseStatusManager,
+            Environment environment
     ) {
         this.accessKey = Keys.hmacShaKeyFor(accessKey.getBytes());
         this.refreshKey = Keys.hmacShaKeyFor(refreshKey.getBytes());
@@ -56,6 +69,7 @@ public class JwtUtility implements JwtUtilityManager {
         this.userBlockService = userBlockService;
         this.userRepository = userRepository;
         this.responseStatusManager = responseStatusManager;
+        this.environment = environment;
     }
 
     @Override
@@ -215,13 +229,30 @@ public class JwtUtility implements JwtUtilityManager {
         // response 초기화
         response.reset();
 
+        boolean isProduction = Arrays.stream(environment.getActiveProfiles())
+                .anyMatch(profile -> profile.equalsIgnoreCase("prod") || profile.equalsIgnoreCase("production"));
+
         // cookie-start
         Cookie newCookie = new Cookie("refreshToken", tokenDto.getRefreshToken());
-        newCookie.setHttpOnly(true); // TODO : Http-only 으로 수정 | secure 설정
-        newCookie.setSecure(true);
-        newCookie.setDomain(null); // TODO : domain 설정  | test 하느라 null 설정함
+        // Security: HttpOnly=true prevents XSS, Secure=true requires HTTPS, SameSite prevents CSRF
+        newCookie.setHttpOnly(true);
+        newCookie.setSecure(cookieSecure || isProduction);
+        
+        if (cookieDomain != null && !cookieDomain.isEmpty()) {
+            newCookie.setDomain(cookieDomain);
+        }
+        
         newCookie.setPath("/");
-        response.addCookie(newCookie);
+        newCookie.setMaxAge((int) (JwtValidity.REFRESH_TOKEN.getValidityInSeconds() / 1000));
+        
+        String sameSite = isProduction ? "Strict" : "Lax";
+        response.addHeader("Set-Cookie", 
+            String.format("refreshToken=%s; Path=/; HttpOnly; %s; SameSite=%s%s",
+                tokenDto.getRefreshToken(),
+                (cookieSecure || isProduction) ? "Secure" : "",
+                sameSite,
+                (cookieDomain != null && !cookieDomain.isEmpty()) ? "; Domain=" + cookieDomain : ""
+            ));
         // cookie-end
 
         response.setStatus(HttpServletResponse.SC_OK);

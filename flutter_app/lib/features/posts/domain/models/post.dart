@@ -14,6 +14,7 @@ class Post {
   final List<String> tags;
   final int viewCount;
   final int likeCount;
+  final int commentCount;
   final bool isLiked;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -29,6 +30,7 @@ class Post {
     required this.tags,
     required this.viewCount,
     required this.likeCount,
+    this.commentCount = 0,
     required this.isLiked,
     required this.createdAt,
     required this.updatedAt,
@@ -48,6 +50,7 @@ class Post {
     List<String>? tags,
     int? viewCount,
     int? likeCount,
+    int? commentCount,
     bool? isLiked,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -63,6 +66,7 @@ class Post {
       tags: tags ?? this.tags,
       viewCount: viewCount ?? this.viewCount,
       likeCount: likeCount ?? this.likeCount,
+      commentCount: commentCount ?? this.commentCount,
       isLiked: isLiked ?? this.isLiked,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
