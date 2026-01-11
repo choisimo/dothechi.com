@@ -3,7 +3,7 @@ import '../dto/post_list_response.dart';
 import '../dto/create_post_request.dart';
 import '../../domain/models/post.dart';
 import '../../domain/models/category.dart';
-import '../../auth/data/datasources/token_storage.dart';
+import '../../../auth/data/datasources/token_storage.dart';
 
 class PostsRepository {
   final PostsApi _postsApi;

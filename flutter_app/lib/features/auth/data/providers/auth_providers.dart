@@ -1,26 +1,19 @@
-import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../api/auth_api.dart';
 import '../datasources/auth_repository.dart';
 import '../datasources/token_storage.dart';
-import '../notifier/auth_notifier.dart';
 import '../../domain/dto/auth_status.dart';
+import '../../../../core/network/api_client.dart';
 
 part 'auth_providers.g.dart';
 
-@riverpod
-Dio dio(DioRef ref) {
-  return Dio(BaseOptions(
-    baseUrl: 'http://localhost:8080',
-    connectTimeout: const Duration(seconds: 5),
-    receiveTimeout: const Duration(seconds: 3),
-  ));
-}
+// Note: Dio provider is now centralized in api_client.dart
+// Use authDioProvider, communityDioProvider, or chatDioProvider instead
 
 @riverpod
 AuthApi authApi(AuthApiRef ref) {
-  final dio = ref.watch(dioProvider);
+  final dio = ref.watch(authDioProvider);
   return AuthApi(dio);
 }
 

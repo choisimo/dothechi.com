@@ -102,9 +102,8 @@ class AIPostCard extends ConsumerWidget {
     final postId = post['id'] as int;
     final title = post['title'] as String;
     final content = post['content'] as String? ?? '';
-    final excerpt = post['excerpt'] as String? ?? content.length > 100 
-        ? '${content.substring(0, 100)}...' 
-        : content;
+    final excerpt = post['excerpt'] as String? ??
+        (content.length > 100 ? '${content.substring(0, 100)}...' : content);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -128,7 +127,7 @@ class AIPostCard extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 8),
-              
+
               // 기본 요약 또는 내용
               Text(
                 excerpt,
@@ -140,20 +139,21 @@ class AIPostCard extends ConsumerWidget {
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),
-              
+
               // AI 요약 (옵션)
               if (content.isNotEmpty && content.length > 100)
                 AIPostSummaryWidget(
                   postContent: content,
                   postId: postId,
                 ),
-              
+
               const SizedBox(height: 12),
-              
+
               // 메타 정보
               Row(
                 children: [
-                  Icon(Icons.access_time, size: 14, color: Colors.grey.shade500),
+                  Icon(Icons.access_time,
+                      size: 14, color: Colors.grey.shade500),
                   const SizedBox(width: 4),
                   Text(
                     '2시간 전', // TODO: 실제 시간 데이터 사용
@@ -176,7 +176,8 @@ class AIPostCard extends ConsumerWidget {
                   // AI 추천 배지
                   if (post['isRecommended'] == true)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: Colors.purple.shade100,
                         borderRadius: BorderRadius.circular(10),
@@ -184,7 +185,8 @@ class AIPostCard extends ConsumerWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.auto_awesome, size: 10, color: Colors.purple.shade700),
+                          Icon(Icons.auto_awesome,
+                              size: 10, color: Colors.purple.shade700),
                           const SizedBox(width: 2),
                           Text(
                             'AI 추천',
@@ -247,7 +249,8 @@ class AIRecommendationSection extends ConsumerWidget {
                   child: Center(
                     child: Column(
                       children: [
-                        Icon(Icons.auto_awesome, size: 48, color: Colors.grey.shade400),
+                        Icon(Icons.auto_awesome,
+                            size: 48, color: Colors.grey.shade400),
                         const SizedBox(height: 8),
                         Text(
                           '더 많은 활동을 하시면\nAI가 맞춤 콘텐츠를 추천해드려요!',
@@ -316,16 +319,18 @@ class AIRecommendationSection extends ConsumerWidget {
 }
 
 // AI 추천 시스템 프로바이더 (Mock 데이터)
-final aiRecommendationsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+final aiRecommendationsProvider =
+    FutureProvider<List<Map<String, dynamic>>>((ref) async {
   // TODO: 실제 AI 추천 API 호출로 대체
   await Future.delayed(const Duration(seconds: 2));
-  
+
   return [
     {
       'id': 101,
       'title': 'Flutter 개발 최신 트렌드',
       'content': 'Flutter 3.0의 새로운 기능들과 개발 트렌드에 대해 알아보세요...',
-      'excerpt': 'Flutter 3.0의 새로운 기능들과 개발 트렌드에 대해 알아보세요. 성능 개선과 새로운 위젯들이 추가됐습니다.',
+      'excerpt':
+          'Flutter 3.0의 새로운 기능들과 개발 트렌드에 대해 알아보세요. 성능 개선과 새로운 위젯들이 추가됐습니다.',
       'isRecommended': true,
       'recommendationScore': 0.95,
     },
@@ -384,7 +389,8 @@ class _SmartSearchWidgetState extends ConsumerState<SmartSearchWidget> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    icon: Icon(Icons.auto_awesome, color: Colors.purple.shade600),
+                    icon:
+                        Icon(Icons.auto_awesome, color: Colors.purple.shade600),
                     onPressed: () => _showAISearchHelp(),
                     tooltip: 'AI 검색 도움말',
                   ),
@@ -410,7 +416,7 @@ class _SmartSearchWidgetState extends ConsumerState<SmartSearchWidget> {
             onChanged: (value) => setState(() {}),
             onSubmitted: _performAISearch,
           ),
-          
+
           // AI 검색 제안
           if (_focusNode.hasFocus && _searchController.text.isEmpty)
             Container(
@@ -426,7 +432,8 @@ class _SmartSearchWidgetState extends ConsumerState<SmartSearchWidget> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.lightbulb, size: 16, color: Colors.purple.shade600),
+                      Icon(Icons.lightbulb,
+                          size: 16, color: Colors.purple.shade600),
                       const SizedBox(width: 4),
                       Text(
                         'AI 검색 예시',

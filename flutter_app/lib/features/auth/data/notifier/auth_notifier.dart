@@ -1,15 +1,31 @@
-import 'package:flutter_chat_client/features/auth/data/token_storage.dart';
-import 'package:flutter_chat_client/features/auth/domain/dto/auth_status.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../datasources/token_storage.dart';
+import '../../domain/dto/auth_status.dart';
 
 class AuthNotifier extends StateNotifier<AuthStatus> {
-  Future<void> initialize(WidgetRef ref) async {
-    final tokenExist = await TokenStorage.getAccessToken(ref);
-    if (tokenExist != null) {
-      state = AuthStatus(token: true, isLoading: false);
-    } else {
-      state = AuthStatus(
-          token: false, isLoading: false, errorMessage: "cannot find token");
+  final TokenStorage _tokenStorage;
+
+  AuthNotifier(this._tokenStorage) : super(const AuthInitial());
+
+  Future<void> initialize() async {
+    state = const AuthLoading();
+
+    try {
+      final token = await _tokenStorage.getAccessToken();
+      if (token != null && token.isNotEmpty) {
+        // TODO: Fetch user info from server and create AuthAuthenticated state
+        // For now, we just mark as unauthenticated since we don't have user info
+        state = const AuthUnauthenticated();
+      } else {
+        state = const AuthUnauthenticated();
+      }
+    } catch (e) {
+      state = AuthError(e.toString());
     }
+  }
+
+  Future<void> logout() async {
+    await _tokenStorage.clearAllTokens();
+    state = const AuthUnauthenticated();
   }
 }

@@ -6,7 +6,7 @@ part of 'posts_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$postsApiHash() => r'eb0d1b4e54adabfb34121b51b2b777453babcf3a';
+String _$postsApiHash() => r'97d42950730f7508ba3db6ef2c07cee01ab9e3f3';
 
 /// See also [postsApi].
 @ProviderFor(postsApi)

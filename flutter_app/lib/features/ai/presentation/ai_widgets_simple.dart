@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Mock AI 위젯들 - 실제 AI 기능은 나중에 통합
 class AIPostSummaryWidget extends StatelessWidget {
@@ -66,12 +65,10 @@ class AIPostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final postId = post['id'] as int;
     final title = post['title'] as String;
     final content = post['content'] as String? ?? '';
-    final excerpt = post['excerpt'] as String? ?? (content.length > 100 
-        ? '${content.substring(0, 100)}...' 
-        : content);
+    final excerpt = post['excerpt'] as String? ??
+        (content.length > 100 ? '${content.substring(0, 100)}...' : content);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -94,7 +91,6 @@ class AIPostCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 8),
-              
               Text(
                 excerpt,
                 style: TextStyle(
@@ -105,12 +101,11 @@ class AIPostCard extends StatelessWidget {
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),
-              
               const SizedBox(height: 12),
-              
               Row(
                 children: [
-                  Icon(Icons.access_time, size: 14, color: Colors.grey.shade500),
+                  Icon(Icons.access_time,
+                      size: 14, color: Colors.grey.shade500),
                   const SizedBox(width: 4),
                   Text(
                     '2시간 전',
@@ -132,7 +127,8 @@ class AIPostCard extends StatelessWidget {
                   const Spacer(),
                   if (post['isRecommended'] == true)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: Colors.purple.shade100,
                         borderRadius: BorderRadius.circular(10),
@@ -140,7 +136,8 @@ class AIPostCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.auto_awesome, size: 10, color: Colors.purple.shade700),
+                          Icon(Icons.auto_awesome,
+                              size: 10, color: Colors.purple.shade700),
                           const SizedBox(width: 2),
                           Text(
                             'AI 추천',

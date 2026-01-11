@@ -1,5 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
-import '../../auth/domain/models/user.dart';
+import '../../../auth/domain/models/user.dart';
 
 part 'comment.g.dart';
 
@@ -31,7 +31,8 @@ class Comment {
     this.deletedAt,
   });
 
-  factory Comment.fromJson(Map<String, dynamic> json) => _$CommentFromJson(json);
+  factory Comment.fromJson(Map<String, dynamic> json) =>
+      _$CommentFromJson(json);
   Map<String, dynamic> toJson() => _$CommentToJson(this);
 
   Comment copyWith({

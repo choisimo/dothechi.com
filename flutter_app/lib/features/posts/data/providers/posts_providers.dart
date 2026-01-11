@@ -3,13 +3,14 @@ import '../api/posts_api.dart';
 import '../datasources/posts_repository.dart';
 import '../../domain/models/post.dart';
 import '../../domain/models/category.dart';
-import '../../auth/data/providers/auth_providers.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../auth/data/providers/auth_providers.dart';
 
 part 'posts_providers.g.dart';
 
 @riverpod
 PostsApi postsApi(PostsApiRef ref) {
-  final dio = ref.watch(dioProvider);
+  final dio = ref.watch(communityDioProvider);
   return PostsApi(dio);
 }
 
@@ -27,7 +28,8 @@ Future<List<Post>> latestPosts(LatestPostsRef ref, {int limit = 10}) async {
 }
 
 @riverpod
-Future<List<Post>> recommendedPosts(RecommendedPostsRef ref, {int limit = 5}) async {
+Future<List<Post>> recommendedPosts(RecommendedPostsRef ref,
+    {int limit = 5}) async {
   final repository = ref.watch(postsRepositoryProvider);
   return repository.getRecommendedPosts(limit: limit);
 }
@@ -39,7 +41,8 @@ Future<List<Category>> categories(CategoriesRef ref) async {
 }
 
 @riverpod
-Future<List<Category>> popularCategories(PopularCategoriesRef ref, {int limit = 5}) async {
+Future<List<Category>> popularCategories(PopularCategoriesRef ref,
+    {int limit = 5}) async {
   final repository = ref.watch(postsRepositoryProvider);
   return repository.getPopularCategories(limit: limit);
 }

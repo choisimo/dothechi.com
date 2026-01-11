@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../data/providers/posts_providers.dart';
-import '../../domain/models/category.dart';
-import '../../../auth/data/providers/auth_providers.dart';
-import '../../../auth/domain/dto/auth_status.dart';
+import '../data/providers/posts_providers.dart';
+import '../../auth/data/providers/auth_providers.dart';
+import '../../auth/domain/dto/auth_status.dart';
 
 class PostCreatePage extends ConsumerStatefulWidget {
   const PostCreatePage({super.key});
@@ -18,7 +17,7 @@ class _PostCreatePageState extends ConsumerState<PostCreatePage> {
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   final _tagController = TextEditingController();
-  
+
   String _selectedCategory = 'general';
   List<String> _tags = [];
   bool _isSubmitting = false;
@@ -119,16 +118,16 @@ class _PostCreatePageState extends ConsumerState<PostCreatePage> {
                   height: 56,
                   child: Center(child: CircularProgressIndicator()),
                 ),
-                error: (error, stack) => const DropdownButtonFormField<String>(
+                error: (error, stack) => DropdownButtonFormField<String>(
                   value: 'general',
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 8,
                     ),
                   ),
-                  items: [
+                  items: const [
                     DropdownMenuItem(
                       value: 'general',
                       child: Text('일반'),
@@ -221,7 +220,7 @@ class _PostCreatePageState extends ConsumerState<PostCreatePage> {
                           vertical: 8,
                         ),
                       ),
-                      onSubmitted: (_) => _addTag(),
+                      onFieldSubmitted: (_) => _addTag(),
                     ),
                   ),
                   const SizedBox(width: 8),

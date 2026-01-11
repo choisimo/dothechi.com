@@ -1,6 +1,5 @@
 import '../api/search_api.dart';
-import '../../posts/domain/models/post.dart';
-import '../../posts/data/dto/post_list_response.dart';
+import '../../../posts/domain/models/post.dart';
 
 class SearchRepository {
   final SearchApi _searchApi;
@@ -14,10 +13,10 @@ class SearchRepository {
     String? category,
   }) async {
     final response = await _searchApi.searchPosts(
-      query: query,
-      page: page,
-      limit: limit,
-      category: category,
+      query,
+      page,
+      limit,
+      category,
     );
     return response.posts;
   }
@@ -27,8 +26,8 @@ class SearchRepository {
     int limit = 5,
   }) async {
     return await _searchApi.getSearchSuggestions(
-      query: query,
-      limit: limit,
+      query,
+      limit,
     );
   }
 }

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../posts/data/providers/posts_providers.dart';
-import '../../../posts/domain/models/post.dart';
-import '../../../posts/domain/models/category.dart';
 import '../../../auth/data/providers/auth_providers.dart';
 import '../../../auth/domain/dto/auth_status.dart';
 import 'section_title.dart';
@@ -19,7 +17,6 @@ class IndexPage extends ConsumerWidget {
     final authState = ref.watch(authNotifierProvider);
     final latestPostsAsync = ref.watch(latestPostsProvider());
     final recommendedPostsAsync = ref.watch(recommendedPostsProvider());
-    final categoriesAsync = ref.watch(categoriesProvider);
     final popularCategoriesAsync = ref.watch(popularCategoriesProvider());
 
     return Scaffold(
@@ -126,7 +123,7 @@ class IndexPage extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              
+
               // 검색창
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -142,13 +139,14 @@ class IndexPage extends ConsumerWidget {
                   ),
                   onSubmitted: (query) {
                     if (query.isNotEmpty) {
-                      context.push('/search?query=${Uri.encodeComponent(query)}');
+                      context
+                          .push('/search?query=${Uri.encodeComponent(query)}');
                     }
                   },
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // 추천 게시물 섹션
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
@@ -163,14 +161,15 @@ class IndexPage extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // 인기 카테고리 섹션
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
                 child: SectionTitle(title: '인기 카테고리'),
               ),
               popularCategoriesAsync.when(
-                data: (categories) => HorizontalCategoryList(categories: categories),
+                data: (categories) =>
+                    HorizontalCategoryList(categories: categories),
                 loading: () => const _LoadingShimmer(height: 80),
                 error: (error, stack) => _ErrorWidget(
                   message: '카테고리를 불러올 수 없습니다',
@@ -178,7 +177,7 @@ class IndexPage extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // 최신 글 섹션
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
@@ -214,7 +213,7 @@ class IndexPage extends ConsumerWidget {
 
 class _LoadingShimmer extends StatelessWidget {
   final double height;
-  
+
   const _LoadingShimmer({required this.height});
 
   @override
@@ -232,7 +231,7 @@ class _LoadingShimmer extends StatelessWidget {
 class _ErrorWidget extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
-  
+
   const _ErrorWidget({
     required this.message,
     required this.onRetry,
