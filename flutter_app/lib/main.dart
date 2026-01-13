@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:flutter_chat_client/app/go_router.dart';
+import 'package:flutter_chat_client/app/app_theme.dart';
 import 'package:flutter_chat_client/core/config/app_config.dart';
 import 'package:flutter_chat_client/core/network/api_client.dart';
 import 'package:flutter_chat_client/features/auth/data/datasources/token_storage.dart';
@@ -38,10 +39,7 @@ class MyApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Nodove Community',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme,
       routerConfig: router,
     );
   }

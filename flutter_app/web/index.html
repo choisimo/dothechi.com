@@ -1,38 +1,126 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Nodove Community - 따뜻한 커뮤니티에서 이야기를 나눠보세요">
+  <meta name="theme-color" content="#6366F1">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://dothechi.com/">
+  <meta property="og:title" content="Nodove Community">
+  <meta property="og:description" content="따뜻한 커뮤니티에서 이야기를 나눠보세요">
+  <meta property="og:image" content="https://dothechi.com/icons/Icon-512.png">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://dothechi.com/">
+  <meta property="twitter:title" content="Nodove Community">
+  <meta property="twitter:description" content="따뜻한 커뮤니티에서 이야기를 나눠보세요">
+  <meta property="twitter:image" content="https://dothechi.com/icons/Icon-512.png">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="flutter_chat_client">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Nodove">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
   
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/Icon-512.png">
 
-  <title>flutter_chat_client</title>
+  <title>Nodove Community</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Preconnect to API -->
+  <link rel="preconnect" href="https://dothechi.com">
+  
+  <!-- Google Fonts - Inter (optional, uncomment if needed) -->
+  <!-- <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"> -->
+
+  <style>
+    /* Loading screen styles */
+    .loading-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #FAFAFA;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    }
+    
+    .loading-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    
+    .loading-logo-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #6366F1, #4F46E5);
+      border-radius: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-weight: 700;
+      font-size: 24px;
+    }
+    
+    .loading-logo-text {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1A1A1A;
+    }
+    
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #E5E5E5;
+      border-top-color: #6366F1;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    .loading-text {
+      margin-top: 16px;
+      color: #737373;
+      font-size: 14px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
+  <!-- Loading screen while Flutter loads -->
+  <div id="loading" class="loading-container">
+    <div class="loading-logo">
+      <div class="loading-logo-icon">N</div>
+      <span class="loading-logo-text">Nodove</span>
+    </div>
+    <div class="loading-spinner"></div>
+    <p class="loading-text">로딩 중...</p>
+  </div>
+  
+  <script>
+    // Hide loading screen when Flutter is ready
+    window.addEventListener('flutter-first-frame', function() {
+      document.getElementById('loading').style.display = 'none';
+    });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

@@ -1,11 +1,11 @@
 {
-    "name": "flutter_chat_client",
-    "short_name": "flutter_chat_client",
+    "name": "Nodove Community",
+    "short_name": "Nodove",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FAFAFA",
+    "theme_color": "#6366F1",
+    "description": "따뜻한 커뮤니티에서 이야기를 나눠보세요",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

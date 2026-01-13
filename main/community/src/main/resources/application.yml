@@ -68,10 +68,13 @@ spring:
       on-profile: prod
   jpa:
     hibernate:
-      ddl-auto: validate
-    show-sql: false
+      ddl-auto: ${DDL_AUTO:update}
+    show-sql: ${SHOW_SQL:false}
 
-# Logging Configuration
+jwt:
+  secret: ${JWT_SECRET:p9NYX1PqNaQTn9fDAlH3DoJOeDtuXqMtKCfbc+JGQDQQ4ne0zv6VRmrpuVZEg+ZlpHLX/Mzlrs6YaXvbbor4Zw==}
+  expiration: ${JWT_EXPIRATION:86400000}
+
 logging:
   level:
     root: INFO

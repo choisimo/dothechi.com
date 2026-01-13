@@ -1,0 +1,126 @@
+version: '3.8'
+
+services:
+  mariadb:
+    image: mariadb:11
+    container_name: community-mariadb
+    restart: unless-stopped
+    environment:
+      - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-rootpassword123!}
+      - MARIADB_DATABASE=community
+      - MARIADB_USER=${DB_USERNAME:-nodove}
+      - MARIADB_PASSWORD=${DB_PASSWORD:-dover1234!}
+      - TZ=Asia/Seoul
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    networks:
+      - community-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  mongodb:
+    image: mongo:7
+    container_name: community-mongodb
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER:-nodove}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-dover1234!}
+      - MONGO_INITDB_DATABASE=community
+      - TZ=Asia/Seoul
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - community-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  community:
+    build: .
+    image: community-app:latest
+    container_name: community-app
+    restart: unless-stopped
+    ports:
+      - "18081:18081"
+    environment:
+      - SERVER_PORT=18081
+      - SPRING_PROFILES_ACTIVE=prod
+      - DB_URL=jdbc:mariadb://mariadb:3306/community
+      - DB_USERNAME=${DB_USERNAME:-nodove}
+      - DB_PASSWORD=${DB_PASSWORD:-dover1234!}
+      - MONGODB_URI=mongodb://${MONGO_USER:-nodove}:${MONGO_PASSWORD:-dover1234!}@mongodb:27017/community?authSource=admin
+      - DDL_AUTO=update
+      - SHOW_SQL=false
+      - LOG_LEVEL=INFO
+      - TZ=Asia/Seoul
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - community-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:18081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  nginx:
+    image: nginx:alpine
+    container_name: community-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - certbot-webroot:/var/www/certbot:ro
+      - ./flutter-web:/usr/share/nginx/html:ro
+    depends_on:
+      - community
+    networks:
+      - community-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: community-cloudflared
+    restart: unless-stopped
+    command:
+      - tunnel
+      - --no-autoupdate
+      - run
+      - --token
+      - ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - nginx
+    networks:
+      - community-network
+
+volumes:
+  mariadb-data:
+  mongodb-data:
+  certbot-webroot:
+
+networks:
+  community-network:
+    driver: bridge
