@@ -1,15 +1,18 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../api/auth_api.dart';
 import '../datasources/auth_repository.dart';
 import '../datasources/token_storage.dart';
 import '../../domain/dto/auth_status.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/storage/storage_interface.dart';
+import '../../../../core/storage/storage_factory.dart';
 
 part 'auth_providers.g.dart';
 
-// Note: Dio provider is now centralized in api_client.dart
-// Use authDioProvider, communityDioProvider, or chatDioProvider instead
+@riverpod
+StorageInterface platformStorage(PlatformStorageRef ref) {
+  return StorageFactory.create();
+}
 
 @riverpod
 AuthApi authApi(AuthApiRef ref) {
@@ -18,14 +21,9 @@ AuthApi authApi(AuthApiRef ref) {
 }
 
 @riverpod
-FlutterSecureStorage secureStorage(SecureStorageRef ref) {
-  return const FlutterSecureStorage();
-}
-
-@riverpod
 TokenStorage tokenStorage(TokenStorageRef ref) {
-  final secureStorage = ref.watch(secureStorageProvider);
-  return TokenStorage(secureStorage);
+  final storage = ref.watch(platformStorageProvider);
+  return TokenStorage(storage);
 }
 
 @riverpod
