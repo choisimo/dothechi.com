@@ -1,0 +1,192 @@
+version: "3.8"
+
+services:
+  mariadb:
+    image: mariadb:11
+    container_name: community-mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword123!}
+      MARIADB_DATABASE: community
+      MARIADB_USER: ${DB_USERNAME:-nodove}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-dover1234!}
+      TZ: Asia/Seoul
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    networks:
+      - community-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    image: community-nginx:latest
+    container_name: community-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./ssl:/etc/nginx/ssl:ro
+      - certbot-webroot:/var/www/certbot:ro
+    depends_on:
+      - community
+    networks:
+      - community-network
+
+  mongodb:
+    image: mongo:7
+    container_name: community-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-nodove}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-dover1234!}
+      MONGO_INITDB_DATABASE: community
+      TZ: Asia/Seoul
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - community-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    container_name: community-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    networks:
+      - community-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth:
+    build:
+      context: ./auth
+      dockerfile: Dockerfile
+    image: community-auth:latest
+    container_name: community-auth
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILE: prod
+      SERVER_PORT: 18080
+      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/community
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-nodove}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-dover1234!}
+      SPRING_DATA_MONGODB_URI: mongodb://${MONGO_USER:-nodove}:${MONGO_PASSWORD:-dover1234!}@mongodb:27017/community?authSource=admin
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      JWT_SECRET_KEY_ACCESS: ${JWT_SECRET_KEY_ACCESS}
+      JWT_SECRET_KEY_REFRESH: ${JWT_SECRET_KEY_REFRESH}
+      JASYPT_CONFIG_PASSWORD: ${JASYPT_CONFIG_PASSWORD}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      TZ: Asia/Seoul
+    ports:
+      - "18080:18080"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - community-network
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: community-cloudflared
+    restart: unless-stopped
+    profiles:
+      - tunnel
+    command:
+      - tunnel
+      - --no-autoupdate
+      - run
+      - --token
+      - ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - nginx
+    networks:
+      - community-network
+
+  community:
+    build:
+      context: ./main/community
+      dockerfile: Dockerfile
+    image: community-service:latest
+    container_name: community-service
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 18081
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:mariadb://mariadb:3306/community
+      DB_USERNAME: ${DB_USERNAME:-nodove}
+      DB_PASSWORD: ${DB_PASSWORD:-dover1234!}
+      MONGODB_URI: mongodb://${MONGO_USER:-nodove}:${MONGO_PASSWORD:-dover1234!}@mongodb:27017/community?authSource=admin
+      DDL_AUTO: update
+      SHOW_SQL: "false"
+      TZ: Asia/Seoul
+    ports:
+      - "18081:18081"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - community-network
+
+  chat:
+    build:
+      context: ./chat/backend
+      dockerfile: Dockerfile
+    image: community-chat:latest
+    container_name: community-chat
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATA_MONGODB_URI: mongodb://${MONGO_USER:-nodove}:${MONGO_PASSWORD:-dover1234!}@mongodb:27017/chat?authSource=admin
+      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/community
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-nodove}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-dover1234!}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      TZ: Asia/Seoul
+    ports:
+      - "8080:8080"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - community-network
+
+volumes:
+  mariadb-data:
+  mongodb-data:
+  redis-data:
+  certbot-webroot:
+
+networks:
+  community-network:
+    driver: bridge

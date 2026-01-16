@@ -1,4 +1,4 @@
-FROM gradle:8.8.0-jdk21 AS builder
+FROM gradle:8.8.0-jdk17 AS builder
 
 WORKDIR /workspace
 
@@ -6,7 +6,7 @@ COPY --chown=gradle:gradle . .
 
 RUN chmod +x ./gradlew && ./gradlew bootJar -x test
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
@@ -18,9 +18,6 @@ RUN chown -R spring:spring /app
 
 USER spring
 
-EXPOSE 18081
-
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:18081/actuator/health || exit 1
+EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
