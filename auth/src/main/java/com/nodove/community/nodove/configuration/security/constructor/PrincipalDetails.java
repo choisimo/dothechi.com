@@ -36,7 +36,7 @@ public class PrincipalDetails implements UserDetails {
     }
 
     public String getUserId() {
-        return this.user.getId().toString();
+        return this.user.getUserId();
     }
 
     public String getEmail() {

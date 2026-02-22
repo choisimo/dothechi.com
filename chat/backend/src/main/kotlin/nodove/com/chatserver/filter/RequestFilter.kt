@@ -11,19 +11,16 @@ import org.springframework.web.filter.OncePerRequestFilter
 class RequestFilter : OncePerRequestFilter()
 {
     override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) {
-        val token: Any? = request.getHeader("Authorization")
-        token as String
+        val token: String? = request.getHeader("Authorization")
 
-        if (!token.startsWith(SecurityEnum.ACCESS_TOKEN_HEADER.s2)) {
+        if (token == null || !token.startsWith(SecurityEnum.ACCESS_TOKEN_HEADER.s2)) {
             filterChain.doFilter(request, response)
             return
         }
 
-        if (token.startsWith(SecurityEnum.ACCESS_TOKEN_HEADER.s2)) {
-            val authToken = token.substring(7)
-            val auth = UsernamePasswordAuthenticationToken(authToken, null, emptyList())
-            SecurityContextHolder.getContext().authentication = auth
-        }
+        val authToken = token.substring(7)
+        val auth = UsernamePasswordAuthenticationToken(authToken, null, emptyList())
+        SecurityContextHolder.getContext().authentication = auth
         filterChain.doFilter(request, response)
     }
 }

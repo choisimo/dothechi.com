@@ -22,20 +22,20 @@ class _AuthApi implements AuthApi {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<AuthResponse> login(LoginRequest request) async {
+  Future<HttpResponse<Map<String, dynamic>>> loginRaw(
+      Map<String, dynamic> body) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    _data.addAll(request.toJson());
-    final _options = _setStreamType<AuthResponse>(Options(
+    final _data = body;
+    final _options = _setStreamType<HttpResponse<Map<String, dynamic>>>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
     )
         .compose(
           _dio.options,
-          '/api/auth/login',
+          '/auth/login',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -45,31 +45,25 @@ class _AuthApi implements AuthApi {
           baseUrl,
         )));
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late AuthResponse _value;
-    try {
-      _value = AuthResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
-    return _value;
+    final _value = _result.data ?? <String, dynamic>{};
+    return HttpResponse(_value, _result);
   }
 
   @override
-  Future<AuthResponse> register(RegisterRequest request) async {
+  Future<HttpResponse<Map<String, dynamic>>> register(
+      Map<String, dynamic> body) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    _data.addAll(request.toJson());
-    final _options = _setStreamType<AuthResponse>(Options(
+    final _data = body;
+    final _options = _setStreamType<HttpResponse<Map<String, dynamic>>>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
     )
         .compose(
           _dio.options,
-          '/api/auth/register',
+          '/auth/register',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -79,31 +73,24 @@ class _AuthApi implements AuthApi {
           baseUrl,
         )));
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late AuthResponse _value;
-    try {
-      _value = AuthResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
-    return _value;
+    final _value = _result.data ?? <String, dynamic>{};
+    return HttpResponse(_value, _result);
   }
 
   @override
-  Future<User> verifyToken(String token) async {
+  Future<HttpResponse<Map<String, dynamic>>> refreshToken() async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
-    final _headers = <String, dynamic>{r'Authorization': token};
-    _headers.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<User>(Options(
-      method: 'GET',
+    final _options = _setStreamType<HttpResponse<Map<String, dynamic>>>(Options(
+      method: 'POST',
       headers: _headers,
       extra: _extra,
     )
         .compose(
           _dio.options,
-          '/api/auth/verify',
+          '/auth/refresh',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -113,14 +100,8 @@ class _AuthApi implements AuthApi {
           baseUrl,
         )));
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late User _value;
-    try {
-      _value = User.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
-    return _value;
+    final _value = _result.data ?? <String, dynamic>{};
+    return HttpResponse(_value, _result);
   }
 
   @override
@@ -137,7 +118,7 @@ class _AuthApi implements AuthApi {
     )
         .compose(
           _dio.options,
-          '/api/user/profile',
+          '/user/profile',
           queryParameters: queryParameters,
           data: _data,
         )

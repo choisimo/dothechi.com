@@ -1,0 +1,153 @@
+version: '3.9'
+
+networks:
+  app-net:
+    driver: bridge
+
+volumes:
+  mariadb-data:
+  mongodb-data:
+  redis-data:
+
+services:
+
+  mariadb:
+    image: mariadb:10.6
+    container_name: dothechi-mariadb
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      MYSQL_DATABASE: community
+      MYSQL_USER: nodove
+      MYSQL_PASSWORD: ${DB_PASSWORD:-nodove1234}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    networks:
+      - app-net
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb:
+    image: mongo:6.0
+    container_name: dothechi-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-nodove}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-nodove1234}
+      MONGO_INITDB_DATABASE: community
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - app-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: dothechi-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-redis1234}
+      --save 60 1
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis1234}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth:
+    build:
+      context: ./auth
+      dockerfile: Dockerfile
+    container_name: dothechi-auth
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/community
+      SPRING_DATASOURCE_USERNAME: nodove
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-nodove1234}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis1234}
+      JWT_SECRET_KEY_ACCESS: ${JWT_ACCESS_SECRET:-dothechi-access-secret-key-must-be-long-enough}
+      JWT_SECRET_KEY_REFRESH: ${JWT_REFRESH_SECRET:-dothechi-refresh-secret-key-must-be-long-enough}
+      JASYPT_ENCRYPTOR_PASSWORD: ${JASYPT_PASSWORD:-jasyptPassword}
+      SPRING_MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      SPRING_MAIL_PORT: ${MAIL_PORT:-587}
+      SPRING_MAIL_USERNAME: ${MAIL_USERNAME}
+      SPRING_MAIL_PASSWORD: ${MAIL_PASSWORD}
+    ports:
+      - "8080:8080"
+    networks:
+      - app-net
+
+  community:
+    build:
+      context: ./main/community
+      dockerfile: Dockerfile
+    container_name: dothechi-community
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/community
+      SPRING_DATASOURCE_USERNAME: nodove
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-nodove1234}
+      SPRING_DATA_MONGODB_URI: mongodb://${MONGO_ROOT_USER:-nodove}:${MONGO_ROOT_PASSWORD:-nodove1234}@mongodb:27017/community?authSource=admin
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis1234}
+      JWT_SECRET_KEY_ACCESS: ${JWT_ACCESS_SECRET:-dothechi-access-secret-key-must-be-long-enough}
+    ports:
+      - "8081:8081"
+    networks:
+      - app-net
+
+  chat:
+    build:
+      context: ./chat/backend
+      dockerfile: Dockerfile
+    container_name: dothechi-chat
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://${MONGO_ROOT_USER:-nodove}:${MONGO_ROOT_PASSWORD:-nodove1234}@mongodb:27017/community?authSource=admin
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis1234}
+      JWT_SECRET_KEY_ACCESS: ${JWT_ACCESS_SECRET:-dothechi-access-secret-key-must-be-long-enough}
+    ports:
+      - "5050:5050"
+    networks:
+      - app-net

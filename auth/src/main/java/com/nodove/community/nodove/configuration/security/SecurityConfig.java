@@ -41,7 +41,13 @@ public class SecurityConfig {
     private final List<String> permitList = Arrays.asList(
             "/auth/login",
             "/auth/register",
-            "/swagger-io.html"
+            "/auth/refresh",
+            "/join/email/check",
+            "/join/email/resend",
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/v3/api-docs/**",
+            "/swagger-resources/**"
     );
 
     @Bean
@@ -61,8 +67,7 @@ public class SecurityConfig {
 
         http.authorizeHttpRequests((authorize) -> {
             authorize.requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll();
-            authorize.requestMatchers("/auth/login", "/auth/register", "/swagger-io.html").permitAll();  // 인증 없이 접근 가능
-            authorize.requestMatchers(this.permitList.toArray(new String[0])).permitAll();
+            authorize.requestMatchers(this.permitList.toArray(new String[0])).permitAll();  // 인증 없이 접근 가능
             authorize.requestMatchers("/api/private").hasAnyAuthority("ADMIN", "ROLE_ADMIN");
             authorize.requestMatchers("/api/protected").hasAnyAuthority("USER", "ROLE_USER", "ADMIN", "ROLE_ADMIN");
             authorize.requestMatchers("/api/public").permitAll();

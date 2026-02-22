@@ -1,9 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 import '../../domain/models/user.dart';
-import '../../domain/dto/login_request.dart';
-import '../../domain/dto/register_request.dart';
-import '../dto/auth_response.dart';
 
 part 'auth_api.g.dart';
 
@@ -11,15 +8,18 @@ part 'auth_api.g.dart';
 abstract class AuthApi {
   factory AuthApi(Dio dio, {String baseUrl}) = _AuthApi;
 
-  @POST('/api/auth/login')
-  Future<AuthResponse> login(@Body() LoginRequest request);
+  /// Raw login — token is in the `Authorization` response header, not the body.
+  @POST('/auth/login')
+  Future<HttpResponse<Map<String, dynamic>>> loginRaw(@Body() Map<String, dynamic> body);
 
-  @POST('/api/auth/register')
-  Future<AuthResponse> register(@Body() RegisterRequest request);
+  /// Register sends email verification; no token in response.
+  @POST('/auth/register')
+  Future<HttpResponse<Map<String, dynamic>>> register(@Body() Map<String, dynamic> body);
 
-  @GET('/api/auth/verify')
-  Future<User> verifyToken(@Header('Authorization') String token);
+  /// Refresh uses the HttpOnly `refreshToken` cookie automatically.
+  @POST('/auth/refresh')
+  Future<HttpResponse<Map<String, dynamic>>> refreshToken();
 
-  @GET('/api/user/profile')
+  @GET('/user/profile')
   Future<User> getProfile(@Header('Authorization') String token);
 }

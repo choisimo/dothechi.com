@@ -1,6 +1,6 @@
 package nodove.com.community.configuration
 
-import org.apache.catalina.filters.RequestFilter
+import nodove.com.community.filter.RequestFilter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.authentication.AuthenticationManager
@@ -18,28 +18,33 @@ import org.springframework.web.cors.CorsConfigurationSource
 class SecurityConfig {
 
     @Bean
-    fun AuthenticationManager() : AuthenticationManager {
-        return AuthenticationManager { authentication : Authentication -> authentication }
+    fun authenticationManager(): AuthenticationManager {
+        return AuthenticationManager { authentication: Authentication -> authentication }
     }
 
     @Bean
     @Throws(Exception::class)
     fun securityFilterChain(http: HttpSecurity, corsConfigurationSource: CorsConfigurationSource): SecurityFilterChain {
         http
-            .cors { obj : CorsConfigurer<HttpSecurity> -> obj.configurationSource(corsConfigurationSource) }
+            .cors { obj: CorsConfigurer<HttpSecurity> -> obj.configurationSource(corsConfigurationSource) }
             .formLogin { obj: FormLoginConfigurer<HttpSecurity> -> obj.disable() }
             .csrf { obj: CsrfConfigurer<HttpSecurity> -> obj.disable() }
             .httpBasic { obj: HttpBasicConfigurer<HttpSecurity> -> obj.disable() }
             .sessionManagement { management: SessionManagementConfigurer<HttpSecurity?> ->
-                management.sessionCreationPolicy(
-                    SessionCreationPolicy.STATELESS
-                )
+                management.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }
             .addFilterBefore(RequestFilter(), UsernamePasswordAuthenticationFilter::class.java)
             .authorizeHttpRequests { request ->
                 request
-                    .anyRequest().permitAll()
-            } // 모든 요청에 대해 인증 없이 접근 가능
-            return http.build()
+                    .requestMatchers(
+                        "/api/posts", "/api/posts/**",
+                        "/api/categories", "/api/categories/**",
+                        "/api/search", "/api/search/**",
+                        "/swagger-ui.html", "/swagger-ui/**",
+                        "/v3/api-docs/**"
+                    ).permitAll()
+                    .anyRequest().authenticated()
+            }
+        return http.build()
     }
 }

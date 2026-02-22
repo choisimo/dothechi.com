@@ -176,11 +176,8 @@ public class UserService implements UserServiceManager{
                     .build();
 
             jwtUtility.loginResponse(response, reissuedToken, deviceId);
-            return ResponseEntity.ok().body(ApiResponseDto.builder()
-                    .code("TOKEN_REISSUED")
-                    .message("토큰이 재발급되었습니다.")
-                    .status("success")
-                    .build().toString());
+            // loginResponse() already wrote the body via response.getWriter() — do not return a body
+            return null;
 
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponseDto.builder()
@@ -203,16 +200,23 @@ public class UserService implements UserServiceManager{
 
     @Override
     public ResponseEntity<?> logoutUser(HttpServletRequest request, HttpServletResponse response) {
-/*
         try {
-            String token = jwtUtility.getRefreshToken(request);
+            String refreshToken = jwtUtility.getRefreshToken(request);
+            if (refreshToken == null) {
+                return ResponseEntity.badRequest().body(responseStatusManager.error(response, "error", "LOGOUT_FAILED", "리프레시 토큰이 없습니다."));
+            }
             String deviceId = request.getHeader(Token.DEVICE_ID_HEADER.getHeaderName());
-            String provider = jwtUtility.parseToken(token, 1).get("provider").toString();
-            redisService.deleteRefreshToken(token, deviceId);
+            String userId = jwtUtility.parseToken(refreshToken, 1).get("userId").toString();
+
+            Redis_Refresh_Token redisRefreshToken = Redis_Refresh_Token.builder()
+                    .userId(userId)
+                    .provider("LOCAL")
+                    .deviceId(deviceId)
+                    .build();
+            redisService.deleteRefreshToken(redisRefreshToken);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(responseStatusManager.error(response, "error", "LOGOUT_FAILED", "로그아웃에 실패했습니다."));
         }
-*/
         return ResponseEntity.ok().body(responseStatusManager.success(response, "success", "LOGOUT_SUCCESS", "로그아웃에 성공했습니다."));
     }
 }

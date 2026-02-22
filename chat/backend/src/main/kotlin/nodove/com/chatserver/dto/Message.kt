@@ -9,5 +9,6 @@ data class Message (
     @Id val id: String? = null,
     val sender: String,
     val receiver: String,
+    val content: String,
     val timestamp: LocalDateTime = LocalDateTime.now()
 )

@@ -71,18 +71,27 @@ public class JwtUtility implements JwtUtilityManager {
         List<UserRole> roles = role.stream().map(GrantedAuthority::getAuthority).map(UserRole::valueOf).collect(Collectors.toList());
         String userId = principalDetails.getUserId();
         String email = principalDetails.getEmail();
+        String userNick = principalDetails.getNickname();
 
-        return generateAcessToken(roles, userId, email);
+        return generateAcessToken(roles, userId, email, userNick);
     }
 
     private String generateAcessToken(List<UserRole> role, String userId, String email) {
-        return Jwts.builder()
+        return generateAcessToken(role, userId, email, null);
+    }
+
+    private String generateAcessToken(List<UserRole> role, String userId, String email, String userNick) {
+        var builder = Jwts.builder()
                 .setSubject("access")
                 .claim("role", role)
                 .claim("userId", userId)
-                .claim("email", email)
+                .claim("email", email);
+        if (userNick != null) {
+            builder = builder.claim("userNick", userNick);
+        }
+        return builder
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + JwtValidity.ACCESS_TOKEN.getValidityInSeconds()))
+                .setExpiration(new Date(System.currentTimeMillis() + JwtValidity.ACCESS_TOKEN.getValidityInMillis()))
                 .signWith(accessKey)
                 .compact();
     }
@@ -93,7 +102,7 @@ public class JwtUtility implements JwtUtilityManager {
         return Jwts.builder()
                 .setSubject("refresh")
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + JwtValidity.REFRESH_TOKEN.getValidityInSeconds()))
+                .setExpiration(new Date(System.currentTimeMillis() + JwtValidity.REFRESH_TOKEN.getValidityInMillis()))
                 .claim("userId", userId)
                 .signWith(refreshKey)
                 .compact();
@@ -130,9 +139,12 @@ public class JwtUtility implements JwtUtilityManager {
 
             UserBlockDto userBlock = this.userBlockService.getBlockCaching(userId);
 
-            UserBlock checkUserBlock = UserBlock.builder()
-                    .unblockedAt(LocalDateTime.parse(userBlock.getUnblockedAt()))
-                    .build();
+            UserBlock checkUserBlock = null;
+            if (userBlock != null && userBlock.getUnblockedAt() != null) {
+                checkUserBlock = UserBlock.builder()
+                        .unblockedAt(LocalDateTime.parse(userBlock.getUnblockedAt()))
+                        .build();
+            }
 
             UserDetails userDetails = new PrincipalDetails(user, checkUserBlock);
             return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
@@ -203,7 +215,7 @@ public class JwtUtility implements JwtUtilityManager {
             result.put("email", parsedToken.getBody().get("email"));
             result.put("role", parsedToken.getBody().get("role"));
         } else {
-            result.put("userId", parsedToken.getBody().getSubject());
+            result.put("userId", parsedToken.getBody().get("userId"));
             result.put("exp", parsedToken.getBody().getExpiration());
         }
         return result;

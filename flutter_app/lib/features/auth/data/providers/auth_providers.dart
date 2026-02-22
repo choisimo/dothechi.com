@@ -4,17 +4,17 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../api/auth_api.dart';
 import '../datasources/auth_repository.dart';
 import '../datasources/token_storage.dart';
-import '../notifier/auth_notifier.dart';
 import '../../domain/dto/auth_status.dart';
+import '../../domain/models/user.dart';
 
 part 'auth_providers.g.dart';
 
 @riverpod
 Dio dio(DioRef ref) {
   return Dio(BaseOptions(
-    baseUrl: 'http://localhost:8080',
-    connectTimeout: const Duration(seconds: 5),
-    receiveTimeout: const Duration(seconds: 3),
+    baseUrl: 'https://auth.nodove.com',
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 10),
   ));
 }
 
@@ -39,7 +39,8 @@ TokenStorage tokenStorage(TokenStorageRef ref) {
 AuthRepository authRepository(AuthRepositoryRef ref) {
   final authApi = ref.watch(authApiProvider);
   final tokenStorage = ref.watch(tokenStorageProvider);
-  return AuthRepository(authApi, tokenStorage);
+  final dio = ref.watch(dioProvider);
+  return AuthRepository(authApi, tokenStorage, dio);
 }
 
 @riverpod
@@ -54,18 +55,32 @@ class AuthNotifier extends _$AuthNotifier {
     try {
       final repository = ref.read(authRepositoryProvider);
       final result = await repository.login(email, password);
-      state = AuthStatus.authenticated(result.user, result.token);
+      // result.user may be null if profile fetch failed; create a placeholder
+      final user = result.user ??
+          User(
+            id: '',
+            userId: '',
+            email: email,
+            userNick: email,
+            userRole: UserRole.user,
+            isActive: true,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+      state = AuthStatus.authenticated(user, result.token);
     } catch (e) {
       state = AuthStatus.error(e.toString());
     }
   }
 
+  /// Register only triggers email verification — does NOT log the user in.
   Future<void> register(String email, String password, String userNick) async {
     state = AuthStatus.loading();
     try {
       final repository = ref.read(authRepositoryProvider);
-      final result = await repository.register(email, password, userNick);
-      state = AuthStatus.authenticated(result.user, result.token);
+      await repository.register(email, password, userNick);
+      // After registration, user must verify email; go to unauthenticated
+      state = AuthStatus.unauthenticated();
     } catch (e) {
       state = AuthStatus.error(e.toString());
     }

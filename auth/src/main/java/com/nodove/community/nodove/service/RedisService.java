@@ -65,6 +65,10 @@ public class RedisService implements RedisServiceManager {
         // Redis에서 조회
         String value = redisTemplate.opsForValue().get(redisKey);
 
+        if (value == null) {
+            return null;
+        }
+
         try {
             // JSON 문자열을 DTO로 변환
             return objectMapper.readValue(value, UserBlockDto.class);
